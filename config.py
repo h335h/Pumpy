@@ -5,9 +5,6 @@ load_dotenv()
 
 class Config:
     """Хранит все настройки приложения."""
-    # Telegram
-    TG_API_ID = int(os.getenv('TG_API_ID', 0))
-    TG_API_HASH = os.getenv('TG_API_HASH', '')
 
     # VK
     VK_GROUP_TOKEN = os.getenv('VK_GROUP_TOKEN', '')
@@ -32,8 +29,6 @@ class Config:
     @classmethod
     def validate(cls):
         """Проверка обязательных настроек."""
-        if not cls.TG_API_ID or not cls.TG_API_HASH:
-            raise ValueError("TG_API_ID и TG_API_HASH должны быть заданы в .env")
         if not cls.VK_GROUP_TOKEN:
             raise ValueError("VK_GROUP_TOKEN должен быть задан в .env")
         if not cls.VK_RECIPIENTS:

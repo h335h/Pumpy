@@ -4,7 +4,6 @@ import logging
 from config import Config
 from db import Database
 from semantic import SemanticFilter
-from collectors.telegram_collector import TelegramCollector
 from collectors.rss_collector import RssCollector
 from sender import DigestSender
 
@@ -56,13 +55,7 @@ def main():
     )
 
     # Коллекторы
-    telegram = TelegramCollector(
-        api_id=Config.TG_API_ID,
-        api_hash=Config.TG_API_HASH,
-        channels=['@htech_plus', '@nplusone', '@qwerty_live', '@confsci', '@sci_career', '@biotehno'],
-        db=db,
-        filter=semantic_filter
-    )
+    
     rss = RssCollector(
         feeds=[
             'https://connect.biorxiv.org/biorxiv_xml.php?subject=biochemistry+bioinformatics+genomics+genetics+molecular_biology+plant_biology',
@@ -92,7 +85,6 @@ def main():
     )
 
     # Выполнение
-    #telegram.collect()
     rss.collect()
     sender.send_digest()
 

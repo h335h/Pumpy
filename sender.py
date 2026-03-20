@@ -20,9 +20,6 @@ class DigestSender:
         self.alpha = alpha
         self.beta = beta
 
-    def _clean_telegram_url(self, url: str) -> str:
-        return url.replace('/@', '/')
-
     def _truncate_text(self, text: str, max_len: int = 100) -> str:
         if len(text) <= max_len:
             return text
