@@ -1,0 +1,92 @@
+VII Всероссийская научно-практическая конференция молодых ученых с международным участием «Фундаментальные и прикладные аспекты в медицине и биологии»
+29-ая Пущинская школа-конференция молодых ученых с международным участием «Биология – наука XXI века». Молекулярная биология и биоинформатика. Клеточные технологии. Микробиология и вирусология. Физиология животных и биомедицина. Физиология и биохимия фотосинтезирующих организмов. Экология и почвоведение. И другие направления работы конференции.
+14-я Всероссийская научно-практическая конференция по геномному секвенированию и редактированию (NGS–2026).
+Международная научная конференция студентов, аспирантов и молодых ученых «Ломоносов–2026». Биоинженерия и биоинформатика.
+XV Конгресс молодых ученых ИТМО. Биоинформатика и машинное обучение. Фундаментальные и прикладные проблемы машинного обучения. Молекулярная биология и биотехнология.
+XII Всероссийский форум молодых исследователей ХимБиоSeasons 2026.
+VII Международная школа-конференция для молодых ученых «Эмбриология, генетика и биотехнология».
+ПИШ НГУ открыла набор на курс «Генные сети: продвинутые подходы по анализу и реконструкции». Работаете с омиксными данными, но хотите выйти за пределы списков генов и перейти к системному анализу? Тогда этот курс для вас. Программа посвящена современным подходам к реконструкции и анализу генных сетей — инструменту, который помогает увидеть не отдельные элементы, а связи, регуляторные механизмы и логику биологических процессов в целом.
+Учёные впервые смоделировали живую клетку на компьютере в 4D. Исследователи из из Университета Иллинойса и Гарвардской медицинской школы воспроизвели на компьютере полный жизненный цикл клетки — от копирования ДНК до деления. Работа опубликована в журнале Cell. Основой модели стала синтетическая бактерия JCVI-syn3A, созданная в Институте Дж. Крейга Вентера в США. У неё минимальный геном — всего 493 гена и кольцевая хромосома примерно из 543 000 генетических «букв», что делает её одной из самых простых форм жизни, способных расти и делиться. Модель работает в четырёх измерениях (3D + время) и отслеживает поведение каждой молекулы, объединяя тысячи химических и генетических процессов. Благодаря суперкомпьютерам и GPU-ускорению учёным удалось смоделировать полный цикл жизни клетки — около 105 минут.
+В МФТИ сделали бактерии «сговорчивее» для генной инженерии. Учёные из Московского физико-технического института (МФТИ) повысили эффективность полезной бактерии Bacillus licheniformis, временно отключив её природный «иммунитет». Эта бактерия активно используется для производства ферментов протеазы и амилазы, антибиотиков и других веществ. Результат — более эффективная генетическая модификация промышленных штаммов. А значит, быстрее и дешевле производство моющих средств, продуктов питания, текстиля и биотоплива. International conference "Monte Carlo methods and applications" 2026. Location: Novosibirsk, Russia. Dates: October 5-9, 2026. Submission deadline: June 1, 2026.
+Растения, которые светятся, когда на них "нападают" вредители (нет, это не фантастика). Как понять, что растение попало под атаку насекомых или инфекций, не беря пробы? Кое-какие варианты существуют, но то, что создали российские биологи (ИБХ #РАН и компания "Планта", кстати, один из авторов, Илья Ямпольский - лауреат премии "Вызов") при участии зарубежных коллег, выглядит как фантастика: созданные ими растения начинают люминесцировать (светиться), когда включаются защитные механизмы. В геном Arabidopsis thaliana и Nicotiana benthamiana встроили конструкцию, где ген люциферазы (фермента, дающего свечение) находится под контролем промоторов, чувствительных к ключевым гормонам защиты - жасмоновой и салициловой кислотам. Когда растение атакуют вредители или патогены, уровень этих гормонов растёт, промотор включается, и растение начинает излучать свет. При этом пораженная зона светится более чем в 50 раз сильнее, чем нетронутая, и никакого оборудования не нужно - видно невооруженным глазом.
+Disorder Drives One of Nature’s Most Complex Machines. Every second, hundreds to thousands of molecules move through thousands of nuclear pores in each of your cells. A new high-definition view reveals the machine in action.
+A Cell So Minimal That It Challenges Definitions of Life. The newly described microbe represents a world of parasitic, intercellular biodiversity only beginning to be revealed by genome sequencing.
+Genome editing that avoids immune detection to integrate large DNA sequences. A genome-editing approach called INSTALL combines single-stranded DNA molecules that evade immune detection with a short double-stranded region that allows recombinase enzymes to insert a DNA sequence into mammalian genomes. INSTALL enables the insertion of large DNA sequences into the genomes of human and mouse cells without causing toxic immune responses.
+Our microbial ancestors were probably oxygen-tolerant. Genomic analysis has unexpectedly revealed that microorganisms called Asgard archaea, the closest relative of our cellular ancestors, can respire using oxygen. This suggests that the common ancestor of these modern archaea and nucleus-containing eukaryotic cells could have been oxygen-tolerant, contrary to previous models of the origins of complex life.
+Summer internship in agricultural gene editing: Intern, Bioinformatics at Pairwise. Seeking students in Biology, Molecular Biology, Computational Biology, Bioinformatics, Genomics, Plant Science. Design and implement automated bioinformatics workflows for analyzing large-scale genomics data. Familiarity with NGS, RNA-seq, variant data, and scripting in Python/R required. [citation:9]
+Summer internship in plant genomics: Intern, Trait Discovery at Pairwise. For students in Plant Developmental Biology, Crop Breeding, Plant Science, Molecular Biology, Genomics. Develop gene editing proposals for crop traits like plant architecture, seed growth, disease tolerance. [citation:5]
+Highly repeatable phenotypic consequences of whole-genome duplication in Spirodela polyrhiza. Whole-genome duplication (WGD) is widespread in plants. Research shows that the phenotypic consequences of genome doubling in duckweed are highly repeatable and largely deterministic. Ploidy explains more phenotypic variation, including salt tolerance, than genotypic background. [citation:2]
+From the genome to super-pangenome: a new paradigm for accelerated crop improvement. Super-pangenomes expand species-level pan-genomes to genus-wide frameworks, integrating cultivated and wild genomes to capture hidden diversity. They discover structural variations, rare alleles, and regulatory elements driving stress adaptation and trait evolution, fast-tracking breeding of stress-smart crops. [citation:3]
+From sequence to function: Bridging single-molecule kinetics and molecular diversity. New multiplexed single-molecule strategies track real-time dynamics of hundreds of thousands of individual molecules and then read out the exact sequence of each one. By linking sequence to kinetic behavior profiles, these methods open new routes to understanding mutations, drug action, and molecular mechanisms. [citation:4]
+How many are you? Open data and bioinformatics reveal species misidentification in Chordodes. This study uses open genomic data and bioinformatics (PCA, ADMIXTURE) to evaluate species delimitation in Nematomorpha, demonstrating how previously released RNA-seq and ddRADseq data can be used to identify potential introgression and correct misidentification of morphologically similar species. [citation:6]
+Going wild in banana breeding enables Fusarium-resistant hybrids with improved fruit quality. Cultivated banana is threatened by Fusarium oxysporum TR4. Researchers assembled the genome of Musa cheesmanii, a wild banana species highly resistant to TR4, and used it in crossbreeding with two cultivars to enhance disease resistance. [citation:7]
+Sub-pangenome analysis reveals structural variants associated with fruit color and bacterial wilt resistance in eggplant. Pangenome construction based on new genome assemblies and population genomic analyses of 226 accessions reveals structural variations associated with key agricultural traits in eggplant. [citation:7]
+Nonlinear genomic selection index accelerates multi-trait crop improvement. Non-additive effects and trait-trait interactions are often overlooked in genomic prediction. This study extends quadratic phenotypic selection index to the genomic domain to enable rapid-cycle multi-trait selection while capturing genome-wide nonlinear relationships. [citation:7]
+Overcoming T cell tolerance to tumor self-antigens through catch-bond engineering. T cell therapies targeting tumor-associated antigens face immune tolerance. Researchers developed a "TCR turbocharging" pipeline introducing catch bonds to convert a weakly reactive T cell receptor into a potent tumor killer while maintaining specificity for prostate cancer antigens. [citation:8]
+A Permutation-Based Framework for Evaluating Bias in Microbiome Differential Abundance Analysis. This study evaluates eight methods for differential abundance analysis across six microbiome datasets, revealing that methods based on negative binomial distribution (DESeq2, edgeR) can produce inflated p-values under null conditions, emphasizing careful method selection in bioinformatics. [citation:10]
+Single-cell RNA sequencing reveals cell-type-specific vulnerabilities in Alzheimer’s disease.
+Spatial transcriptomics unveils the organization of tumours and their microenvironment.
+A harmonized atlas of mouse spinal cord cell types and their spatial organization.
+Deep learning-based prediction of gene expression from histone modification signals.
+CRISPR–Cas9 screens identify essential genes in cancer organoids.
+Prime editing: a new tool for precision genome engineering.
+Base editing approaches for therapeutic correction of genetic mutations.
+Synthetic biology: designing genetic circuits for cellular computation.
+Engineered bacteria for targeted cancer therapy: from proof of concept to clinical trials.
+Machine learning for protein structure prediction: AlphaFold and beyond.
+Accelerating drug discovery with AI: de novo design of small molecule inhibitors.
+Predicting protein–protein interactions using graph neural networks.
+Long-read sequencing reveals structural variants in the human genome.
+Whole-genome sequencing of 10,000 individuals identifies novel loci associated with complex traits.
+The NIH Common Fund's Single Cell Analysis Program: enabling a new era of cellular resolution.
+EMBL-EBI Bioinformatics Roadshow: hands-on training in sequence analysis, proteomics, and functional genomics.
+Postdoctoral fellowship in computational genomics at the Broad Institute of MIT and Harvard.
+PhD position in plant synthetic biology at the John Innes Centre, UK.
+Research Scientist – Single-cell Genomics at 10x Genomics.
+Summer school on “Machine Learning in Computational Biology” – registration open.
+EMBO Practical Course on “Spatial Transcriptomics and Single-Cell Analysis”.
+Call for applications: HHMI International Program – early career scientist fellowships.
+NSF postdoctoral research fellowships in biology (PRFB): bioinformatics and computational biology track.
+The Human Cell Atlas project: mapping the human body cell by cell.
+The Earth BioGenome Project: sequencing all eukaryotic life.
+Global microbiome initiative: cataloguing microbial diversity across ecosystems.
+Deep-sea metagenomics reveals novel enzymes for industrial biotechnology.
+Phage therapy: engineering bacteriophages to combat antibiotic-resistant bacteria.
+RNA-based therapeutics: from mRNA vaccines to programmable gene therapies.
+Organoids: miniature organs for disease modelling and drug screening.
+Ethical implications of human germline genome editing: a global perspective.
+Open science and preprint culture in the life sciences – a paradigm shift.
+Identification of bacterial isolates from grapevine galls using MALDI-TOF mass spectrometry
+Molecular genetic analysis of phytopathogenic bacteria associated with crop diseases
+Assessment of pathogenicity of Xanthomonas and Winslowiella bacteria on carrot bioassay
+Detection of virulence genes in plant pathogenic bacteria by PCR analysis
+Species composition of bacterial microbiome in vine stem tumors
+Pseudomonas koreensis and Enterobacter cloacae as components of grapevine microbiome
+Improving the efficiency of hybrid grape seed germination using phytohormones
+Application of plant growth regulators in viticulture
+Biotechnological methods for enhancing seed germination in crops
+Tissue culture and micropropagation techniques in grapevine breeding
+Plant biotechnology for disease-free planting material production
+Agrobacterium-mediated transformation of grapevine for improved traits
+Diagnostics of bacterial diseases in horticultural crops
+Integrated management of crown gall disease in vineyards
+Role of plant microbiome in health and disease resistance
+Endophytic bacteria and their interaction with grapevine hosts
+Screening for biocontrol agents against grapevine pathogens
+Molecular plant-microbe interactions in the rhizosphere
+Advances in plant virology and bacteriology for crop protection
+Genome-wide analysis of type III secretion system effectors in phytopathogenic bacteria
+Role of quorum sensing in biofilm formation and virulence of plant pathogens
+Horizontal gene transfer of antibiotic resistance genes in agrobacterial populations
+Comparative genomics of Xanthomonas species reveals lineage-specific virulence factors
+Mechanisms of copper resistance in plant pathogenic bacteria and their spread via plasmids
+Molecular detection of latent bacterial infections in planting material using LAMP assays
+Biological control of crown gall disease using non-pathogenic Agrobacterium strains
+Induced systemic resistance in plants by beneficial rhizobacteria
+CRISPR-Cas based detection of phytopathogens: from lab to field application
+Population structure and evolutionary dynamics of Ralstonia solanacearum species complex
+Metatranscriptomic analysis of plant-microbe interactions in the rhizosphere
+Effector-triggered immunity in crops: recognition and signaling pathways
+Draft genome sequence of a novel Pseudomonas syringae pathovar from stone fruits
+Long-read sequencing resolves plasmid content in Agrobacterium biovars
+Phage therapy for controlling bacterial wilt in solanaceous crops

@@ -1,0 +1,42 @@
+# Базы данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Переменные окружения (содержат токены)
+.env
+
+# Вектор интересов (генерируется)
+interest_vector.npy
+
+# Сессии Telegram
+*.session
+*.session-journal
+
+# Логи
+logs/
+*.log
+
+# Виртуальные окружения
+venv/
+env/
+ENV/
+.venv/
+
+# Файлы IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS системные
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Документация временная
+*.aux
+*.log
