@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Your Digest</h2>
+<div class="list-group">
+    {% for article in articles %}
+    <div class="list-group-item" data-id="{{ article.id }}">
+        <h5>{{ article.title }}</h5>
+        <p class="text-muted">{{ article.source }} | {{ article.date }}</p>
+        <p>{{ article.text[:200] }}...</p>
+        <div>
+            <button class="btn btn-sm btn-success like-btn" data-rating="1">👍 Like</button>
+            <button class="btn btn-sm btn-danger dislike-btn" data-rating="0">👎 Dislike</button>
+        </div>
+    </div>
+    {% else %}
+    <p>No articles yet. Check back later.</p>
+    {% endfor %}
+</div>
+
+<script>
+    document.querySelectorAll('.like-btn, .dislike-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const articleDiv = this.closest('.list-group-item');
+            const articleId = articleDiv.dataset.id;
+            const rating = this.dataset.rating;
+            fetch(`/rate/${articleId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({rating: parseInt(rating)})
+            }).then(res => res.json()).then(data => {
+                if (data.status === 'ok') {
+                    this.disabled = true;
+                    this.textContent = this.classList.contains('like-btn') ? 'Liked' : 'Disliked';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
