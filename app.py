@@ -6,6 +6,7 @@ from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from db import Database
 from semantic import SemanticFilter
@@ -218,9 +219,9 @@ def get_ranked_articles(user_id, query=None):
             else:
                 bm25_query = None
 
-    bm25_scores = None
+    bm25_scores = {}
     if bm25_query:
-        bm25_scores = bm25_indexer.get_scores(bm25_query)
+        bm25_scores = bm25_indexer.get_scores_dict(bm25_query)
 
     # Получаем рейтинги пользователя для подсветки кнопок
     user_ratings = {}
@@ -244,7 +245,7 @@ def get_ranked_articles(user_id, query=None):
 
     # Ранжирование
     scored = []
-    for idx, article in enumerate(articles):
+    for article in articles:
         emb_bytes = article.get('embedding')
         if emb_bytes is None:
             full_text = article['title'] + ' ' + (article['text'] or '')
@@ -256,16 +257,12 @@ def get_ranked_articles(user_id, query=None):
 
         sim = np.dot(interest_vector, article_embedding) / (np.linalg.norm(interest_vector) * np.linalg.norm(article_embedding))
 
-        bm25 = 0.0
-        if bm25_scores is not None and idx < len(bm25_scores):
-            bm25 = bm25_scores[idx]
+        bm25 = bm25_scores.get(article['id'], 0.0)
 
-        if bm25_scores is not None and len(bm25_scores) > 0:
-            max_bm25 = np.max(bm25_scores) if bm25_scores.size > 0 else 1.0
-            if max_bm25 > 0:
-                bm25_norm = bm25 / max_bm25
-            else:
-                bm25_norm = 0.0
+        # Нормализуем BM25 по максимуму
+        max_bm25 = max(bm25_scores.values()) if bm25_scores else 1.0
+        if max_bm25 > 0:
+            bm25_norm = bm25 / max_bm25
         else:
             bm25_norm = 0.0
 
@@ -305,7 +302,8 @@ def register():
         if db.get_user_by_username(username):
             flash('Username already exists')
             return redirect(url_for('register'))
-        user_id = db.create_user(username, email, password)
+        hashed = generate_password_hash(password)
+        user_id = db.create_user(username, email, hashed)
         if user_id:
             # Сделать первого пользователя администратором
             with db.get_connection() as conn:
@@ -333,7 +331,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = db.get_user_by_username(username)
-        if user and user['password'] == password:
+        if user and check_password_hash(user['password'], password):
             user_obj = User(user['id'], user['username'], user['email'],
                             user.get('is_admin', False), user.get('lab_id'))
             login_user(user_obj)
@@ -405,7 +403,7 @@ def collect():
     bm25_indexer.refresh()
     return 'OK', 200
 
-# ---------- API для интерфейса ----------
+# ---------- API для интерфейса (упрощённые) ----------
 @app.route('/api/user_context')
 @login_required
 def user_context():
@@ -424,18 +422,12 @@ def user_context():
     else:
         return jsonify({'show_tip': False})
 
+# Удалён маршрут /api/command (или можно оставить заглушку)
+# Оставляем его, но возвращаем сообщение "Coming soon" без ложных обещаний
 @app.route('/api/command', methods=['POST'])
 @login_required
 def process_command():
-    data = request.get_json()
-    command = data.get('command', '').lower()
-    # Простой обработчик – можно расширить позже
-    if 'plant' in command and 'genomics' in command:
-        return jsonify({'message': 'Focusing on plant genomics. Refresh the page to see updated digest.'})
-    elif 'crispr' in command:
-        return jsonify({'message': 'Showing CRISPR-related papers. We will adjust your interest vector.'})
-    else:
-        return jsonify({'message': f'Command received: "{command}". We are working on implementing this feature.'})
+    return jsonify({'message': 'Natural language commands are coming soon! Use the search bar above to refine your digest.'})
 
 @app.route('/export/bibtex')
 @login_required

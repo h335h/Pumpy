@@ -28,14 +28,16 @@ class SemanticFilter:
     def get_similarity(self, text: str) -> float:
         model = self._load_model()
         vec = self._load_vector()
-        emb = model.encode([text[:512]])
+        emb = model.encode([text], convert_to_numpy=True)
         sim = cosine_similarity(emb, vec.reshape(1, -1))[0][0]
         return float(sim)
 
     def get_embedding(self, text: str) -> np.ndarray:
-        """Возвращает эмбеддинг текста как numpy array (384d)."""
         model = self._load_model()
-        emb = model.encode([text[:512]], convert_to_numpy=True)
+        # Обрезаем по токенам до 512
+        tokens = model.tokenizer.encode(text, max_length=512, truncation=True)
+        truncated = model.tokenizer.decode(tokens, skip_special_tokens=True)
+        emb = model.encode([truncated], convert_to_numpy=True)
         return emb[0]
 
     def is_relevant(self, text: str, custom_threshold: Optional[float] = None) -> bool:

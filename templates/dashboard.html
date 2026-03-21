@@ -4,11 +4,10 @@
     <h2>Your Digest</h2>
     <div class="header-actions">
         <button id="export-bibtex" class="btn btn-outline-secondary btn-sm">📚 Export BibTeX</button>
-        <button id="ranking-settings" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#rankingModal">⚙️ Ranking settings</button>
     </div>
 </div>
 
-<!-- Панель "Быстрый обзор" -->
+<!-- Панель "Быстрый обзор" (будет появляться при необходимости) -->
 <div id="quick-insight" class="alert alert-light border mb-4" style="display: none;">
     <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0">✨ Quick insight</h5>
@@ -17,12 +16,7 @@
     <p id="insight-text" class="mt-2"></p>
 </div>
 
-<!-- Сообщение о поиске -->
-<div id="search-message" class="alert alert-info mt-3" style="display: none;">
-    🔍 Updating digest according to your preferences...
-</div>
-
-<!-- Командная строка -->
+<!-- Поле для поиска -->
 <div class="command-bar mb-4">
     <div class="input-group">
         <span class="input-group-text">🔍</span>
@@ -32,7 +26,7 @@
 </div>
 
 <div id="articles-container">
-    <!-- Скелетон -->
+    <!-- Скелетон (показывается, пока нет статей) -->
     <div class="skeleton-loader" id="skeleton-loader">
         {% for i in range(3) %}
         <div class="article-card skeleton-card">
@@ -47,7 +41,7 @@
         </div>
         {% endfor %}
     </div>
-    <!-- Список статей -->
+    <!-- Список статей (изначально скрыт) -->
     <div id="articles-list" style="display: none;">
         {% for article in articles %}
         <div class="article-card" data-id="{{ article.id }}">
@@ -57,7 +51,7 @@
             <div class="article-actions">
                 <button class="btn-like {% if article.user_rating == 1 %}active{% endif %}" data-rating="1">👍 Like</button>
                 <button class="btn-dislike {% if article.user_rating == 0 %}active{% endif %}" data-rating="0">👎 Dislike</button>
-                <button class="btn-details" data-id="{{ article.id }}" data-bs-toggle="modal" data-bs-target="#articleModal">📄 Details</button>
+                <button class="btn-details" data-id="{{ article.id }}" data-bs-toggle="modal" data-bs-target="#articleModal">Details</button>
             </div>
         </div>
         {% else %}
@@ -85,23 +79,17 @@
     </div>
 </div>
 
-<!-- Модальное окно для настроек ранжирования (заглушка) -->
-<div class="modal fade" id="rankingModal" tabindex="-1" aria-labelledby="rankingModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Ranking Settings</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>To change ranking parameters, please go to the admin panel.</p>
-                <a href="{{ url_for('admin_settings') }}" class="btn btn-primary">Open Admin Settings</a>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+<script>
+    // Убираем скелетон и показываем список после загрузки
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const skeleton = document.getElementById('skeleton-loader');
+            const articlesList = document.getElementById('articles-list');
+            if (skeleton && articlesList) {
+                skeleton.style.display = 'none';
+                articlesList.style.display = 'block';
+            }
+        }, 500);
+    });
+</script>
 {% endblock %}

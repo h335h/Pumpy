@@ -26,9 +26,16 @@ class BM25Indexer:
         logger.info(f"BM25 index refreshed with {len(articles)} articles")
 
     def get_scores(self, query):
-        """Возвращает массив BM25-оценок для всех статей в индексе."""
+        """Возвращает массив BM25-оценок для всех статей в индексе (в порядке article_ids)."""
         if self.index is None:
             return []
         tokenized_query = query.lower().split()
         scores = self.index.get_scores(tokenized_query)
         return scores
+
+    def get_scores_dict(self, query):
+        """Возвращает словарь {article_id: score}."""
+        if self.index is None:
+            return {}
+        scores = self.get_scores(query)
+        return {self.article_ids[i]: scores[i] for i in range(len(self.article_ids))}
