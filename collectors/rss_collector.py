@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from typing import List
-from .base import Collector
+from collectors.base import Collector
 from db import Database
 from semantic import SemanticFilter
 
@@ -17,7 +17,6 @@ class RssCollector(Collector):
         self.filter = filter
 
     def _fetch_full_text(self, url: str) -> str:
-        """Загружает полный текст статьи (первые параграфы)."""
         try:
             resp = requests.get(url, timeout=10)
             soup = BeautifulSoup(resp.text, 'lxml')
@@ -37,14 +36,15 @@ class RssCollector(Collector):
                 summary = entry.get('summary', '')
                 link = entry.get('link', '')
                 published = entry.get('published', datetime.now().isoformat())
-                # Если summary короткий, пробуем загрузить полный текст
                 if len(summary) < 200:
                     full = self._fetch_full_text(link)
                     text = title + ' ' + full
                 else:
                     text = title + ' ' + summary
-                if self.filter.is_relevant(text):
-                    self.db.save_article(link, title, text[:1000], feed.feed.get('title', 'RSS'), published)
+                # Вычисляем similarity и проверяем порог
+                sim = self.filter.get_similarity(text)
+                if sim >= self.filter.threshold:
+                    self.db.save_article(link, title, text[:1000], feed.feed.get('title', 'RSS'), published, sim)
                     logger.info(f"Saved RSS: {link}")
         except Exception as e:
             logger.error(f"Error in RSS feed {feed_url}: {e}")
