@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    /* Полная перезапись стилей для ползунков */
+    input.form-range[type="range"] {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        width: 100% !important;
+        height: 6px !important;
+        background: transparent !important;   /* убираем фон у самого инпута */
+        padding: 0 !important;
+    }
+
+    /* Трек для WebKit (Chrome, Safari, Edge) */
+    input.form-range[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 6px;
+        background: #d1d5db !important;   /* серый трек */
+        border-radius: 3px;
+        border: none;
+    }
+
+    /* Бегунок для WebKit */
+    input.form-range[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        width: 16px !important;
+        height: 16px !important;
+        border-radius: 50% !important;
+        background: #3b82f6 !important;   /* синий бегунок */
+        cursor: pointer !important;
+        border: none !important;
+        margin-top: -5px;  /* центрирование по треку */
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+
+    /* При наведении */
+    input.form-range[type="range"]::-webkit-slider-thumb:hover {
+        background: #1e40af !important;
+        transform: scale(1.1);
+    }
+
+    /* Для Firefox */
+    input.form-range[type="range"]::-moz-range-track {
+        width: 100%;
+        height: 6px;
+        background: #d1d5db !important;
+        border-radius: 3px;
+        border: none;
+    }
+
+    input.form-range[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3b82f6 !important;
+        cursor: pointer;
+        border: none;
+    }
+
+    /* Для Internet Explorer / Edge Legacy */
+    input.form-range[type="range"]::-ms-track {
+        width: 100%;
+        height: 6px;
+        background: #d1d5db !important;
+        border-radius: 3px;
+        border: none;
+        color: transparent;
+    }
+
+    input.form-range[type="range"]::-ms-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3b82f6 !important;
+        cursor: pointer;
+        border: none;
+    }
+</style>
+
+<h2>Ranking Settings</h2>
+<form method="post" action="{{ url_for('admin_settings') }}">
+    <div class="mb-3">
+        <label class="form-label">BM25 Weight (0-1) – keyword relevance</label>
+        <input type="range" class="form-range" name="bm25_weight" min="0" max="1" step="0.05" value="{{ settings.bm25_weight }}">
+        <span id="bm25_value">{{ settings.bm25_weight }}</span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">MMR Lambda (0-1) – higher = more relevance, lower = more diversity</label>
+        <input type="range" class="form-range" name="mmr_lambda" min="0" max="1" step="0.05" value="{{ settings.mmr_lambda }}">
+        <span id="mmr_value">{{ settings.mmr_lambda }}</span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Freshness Alpha (decay factor)</label>
+        <input type="number" step="0.05" class="form-control" name="freshness_alpha" value="{{ settings.freshness_alpha }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Freshness Beta (half-life in days)</label>
+        <input type="number" class="form-control" name="freshness_beta" value="{{ settings.freshness_beta }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Interest Threshold (similarity cutoff)</label>
+        <input type="number" step="0.05" class="form-control" name="interest_threshold" value="{{ settings.interest_threshold }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Save settings</button>
+</form>
+
+<script>
+    // Отображение текущего значения ползунков
+    const bm25Slider = document.querySelector('input[name="bm25_weight"]');
+    const bm25Span = document.getElementById('bm25_value');
+    if (bm25Slider && bm25Span) {
+        bm25Slider.addEventListener('input', () => bm25Span.textContent = bm25Slider.value);
+    }
+    const mmrSlider = document.querySelector('input[name="mmr_lambda"]');
+    const mmrSpan = document.getElementById('mmr_value');
+    if (mmrSlider && mmrSpan) {
+        mmrSlider.addEventListener('input', () => mmrSpan.textContent = mmrSlider.value);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% for article in articles %}
+<div class="article-card" data-id="{{ article.id }}">
+    <h3 class="article-title">{{ article.title }}</h3>
+    <div class="article-meta">{{ article.source }} | {{ article.date }}</div>
+    <div class="article-excerpt">{{ article.text[:200] }}...</div>
+    <div class="article-actions">
+        <button class="btn-like {% if article.user_rating == 1 %}active{% endif %}" data-rating="1">👍 Like</button>
+        <button class="btn-dislike {% if article.user_rating == 0 %}active{% endif %}" data-rating="0">👎 Dislike</button>
+        <button class="btn-details" data-id="{{ article.id }}" data-bs-toggle="modal" data-bs-target="#articleModal">📄 Details</button>
+    </div>
+</div>
+{% else %}
+<p>No articles yet. Check back later.</p>
+{% endfor %}

@@ -123,6 +123,13 @@ class Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         conn.commit()
 
     def _init_postgres(self, conn):
@@ -201,9 +208,16 @@ class Database:
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
         conn.commit()
 
-    # --- Методы работы со статьями (без изменений) ---
+    # --- Методы работы со статьями ---
     def save_article(self, url, title, text, source, date, similarity, embedding=None):
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -271,7 +285,7 @@ class Database:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    # --- Методы работы с пользователями (добавлен is_admin) ---
+    # --- Методы работы с пользователями ---
     def create_user(self, username, email, password):
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -427,4 +441,33 @@ class Database:
                 cursor.execute('UPDATE rss_feeds SET active = ? WHERE id = ?', (active, feed_id))
             else:
                 cursor.execute('UPDATE rss_feeds SET active = %s WHERE id = %s', (active, feed_id))
+            conn.commit()
+
+    # --- Методы для настроек ---
+    def get_setting(self, key, default=None):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('SELECT value FROM settings WHERE key = ?', (key,))
+            else:
+                cursor.execute('SELECT value FROM settings WHERE key = %s', (key,))
+            row = cursor.fetchone()
+            if row:
+                return row[0]
+            return default
+
+    def set_setting(self, key, value):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('''
+                    INSERT OR REPLACE INTO settings (key, value, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                ''', (key, value))
+            else:
+                cursor.execute('''
+                    INSERT INTO settings (key, value, updated_at)
+                    VALUES (%s, %s, NOW())
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+                ''', (key, value))
             conn.commit()

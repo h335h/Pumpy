@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="landing-container">
+    <!-- Hero Section (блок 1) -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Pumpy</h1>
+            <p class="hero-subtitle">Semantic news aggregator for scientific literature</p>
+            <p class="hero-description">
+                Pumpy collects articles from leading journals, filters them by semantic relevance to your interests,
+                and delivers a personalized digest. Powered by state-of-the-art embeddings and hybrid search.
+            </p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('register') }}" class="btn-primary">Get started →</a>
+                <a href="{{ url_for('login') }}" class="btn-secondary">Sign in</a>
+            </div>
+        </div>
+        <div class="hero-illustration">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Pumpy Logo" class="hero-logo">
+        </div>
+    </section>
+
+    <!-- Features Section (блок 2) -->
+    <section class="features">
+        <h2 class="section-title">Why Pumpy?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Semantic relevance</h3>
+                <p>Uses state-of-the-art embeddings (BAAI/bge-small-en-v1.5) to understand what you care about.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Hybrid search</h3>
+                <p>Combines BM25 keyword search with semantic similarity for the best of both worlds.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Personalization</h3>
+                <p>Your likes and dislikes shape your own interest vector — the more you use it, the better it gets.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Diverse results</h3>
+                <p>MMR diversity ensures you see a wide range of relevant articles, not just duplicates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚙️</div>
+                <h3>Admin control</h3>
+                <p>Administrators can manage RSS feeds, users, and ranking parameters in a dedicated panel.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>Open source</h3>
+                <p>Fully transparent and extensible — check the code on <a href="https://github.com/h335h/Pumpy" target="_blank">GitHub</a>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works Section (блок 3) -->
+    <section class="how-it-works">
+        <h2 class="section-title">How it works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Collect</h3>
+                <p>Pumpy fetches the latest preprints and articles from RSS feeds of major journals.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Filter & rank</h3>
+                <p>Articles are filtered by semantic similarity to your profile, then ranked with hybrid search and MMR.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Personalize</h3>
+                <p>Your feedback (likes/dislikes) fine‑tunes your personal interest vector. The system adapts.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Enjoy</h3>
+                <p>Every day you get a fresh digest of the most relevant and diverse papers in your field.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer (блок 4) -->
+    <footer class="landing-footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <h4>Pumpy</h4>
+                <p>Semantic science news, tailored to you.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/h335h/Pumpy" target="_blank">GitHub</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+        <div class="footer-copyright">
+            &copy; 2026 Pumpy. All rights reserved.
+        </div>
+    </footer>
+</div>
+{% endblock %}

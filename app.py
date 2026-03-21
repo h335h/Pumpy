@@ -4,7 +4,7 @@ import math
 import numpy as np
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from dotenv import load_dotenv
 from db import Database
@@ -46,13 +46,6 @@ semantic = SemanticFilter(MODEL_NAME, INTEREST_VECTOR_PATH, THRESHOLD)
 # Инициализация BM25 индексатора
 bm25_indexer = BM25Indexer(db)
 
-TOP_N = int(os.getenv('TOP_N', 10))
-FRESHNESS_ALPHA = float(os.getenv('FRESHNESS_ALPHA', '0.2'))
-FRESHNESS_BETA = float(os.getenv('FRESHNESS_BETA', '30'))
-
-# MMR параметр: λ — баланс между релевантностью и разнообразием (0.5 = средний)
-MMR_LAMBDA = 0.5
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -86,11 +79,11 @@ def parse_date(date_val):
             continue
     return datetime.now()
 
-def freshness_factor(pub_date):
+def freshness_factor(pub_date, alpha, beta):
     days = (datetime.now() - pub_date).days
     if days < 0:
         days = 0
-    return 1 + FRESHNESS_ALPHA * math.exp(-days / FRESHNESS_BETA)
+    return 1 + alpha * math.exp(-days / beta)
 
 # ---------- MMR диверсификация ----------
 def mmr_selection(candidates, lambda_val=0.5, top_n=10):
@@ -182,12 +175,126 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# ---------- Функция для получения ранжированных статей ----------
+def get_ranked_articles(user_id, query=None):
+    # Загружаем параметры из БД
+    bm25_weight = float(db.get_setting('bm25_weight', '0.3'))
+    mmr_lambda = float(db.get_setting('mmr_lambda', '0.5'))
+    freshness_alpha = float(db.get_setting('freshness_alpha', '0.2'))
+    freshness_beta = float(db.get_setting('freshness_beta', '30'))
+    top_n = int(os.getenv('TOP_N', 10))
+
+    user_vec_bytes = db.get_user_vector(user_id)
+    if user_vec_bytes is None:
+        interest_vector = np.load(INTEREST_VECTOR_PATH)
+    else:
+        interest_vector = np.frombuffer(user_vec_bytes, dtype=np.float32)
+
+    articles = db.get_unsent_articles()
+    article_ids = [a['id'] for a in articles]
+
+    # Если передан поисковый запрос, используем его вместо лайков
+    if query:
+        bm25_query = query
+    else:
+        # Строим запрос из лайкнутых статей
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            if db.is_sqlite:
+                cursor.execute('''
+                    SELECT a.title, a.text FROM articles a
+                    JOIN ratings r ON a.id = r.article_id
+                    WHERE r.user_id = ? AND r.rating = 1
+                ''', (user_id,))
+            else:
+                cursor.execute('''
+                    SELECT a.title, a.text FROM articles a
+                    JOIN ratings r ON a.id = r.article_id
+                    WHERE r.user_id = %s AND r.rating = 1
+                ''', (user_id,))
+            liked_texts = cursor.fetchall()
+            if liked_texts:
+                bm25_query = " ".join([f"{row[0]} {row[1] or ''}" for row in liked_texts])
+            else:
+                bm25_query = None
+
+    bm25_scores = None
+    if bm25_query:
+        bm25_scores = bm25_indexer.get_scores(bm25_query)
+
+    # Получаем рейтинги пользователя для подсветки кнопок
+    user_ratings = {}
+    if article_ids:
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            if db.is_sqlite:
+                placeholders = ','.join(['?'] * len(article_ids))
+                cursor.execute(f'''
+                    SELECT article_id, rating FROM ratings
+                    WHERE user_id = ? AND article_id IN ({placeholders})
+                ''', (user_id, *article_ids))
+            else:
+                placeholders = ','.join(['%s'] * len(article_ids))
+                cursor.execute(f'''
+                    SELECT article_id, rating FROM ratings
+                    WHERE user_id = %s AND article_id IN ({placeholders})
+                ''', (user_id, *article_ids))
+            for row in cursor.fetchall():
+                user_ratings[row[0]] = row[1]
+
+    # Ранжирование
+    scored = []
+    for idx, article in enumerate(articles):
+        emb_bytes = article.get('embedding')
+        if emb_bytes is None:
+            full_text = article['title'] + ' ' + (article['text'] or '')
+            emb = semantic.get_embedding(full_text)
+            article_embedding = emb
+            db.update_article_embedding(article['id'], emb.tobytes())
+        else:
+            article_embedding = np.frombuffer(emb_bytes, dtype=np.float32)
+
+        sim = np.dot(interest_vector, article_embedding) / (np.linalg.norm(interest_vector) * np.linalg.norm(article_embedding))
+
+        bm25 = 0.0
+        if bm25_scores is not None and idx < len(bm25_scores):
+            bm25 = bm25_scores[idx]
+
+        if bm25_scores is not None and len(bm25_scores) > 0:
+            max_bm25 = np.max(bm25_scores) if bm25_scores.size > 0 else 1.0
+            if max_bm25 > 0:
+                bm25_norm = bm25 / max_bm25
+            else:
+                bm25_norm = 0.0
+        else:
+            bm25_norm = 0.0
+
+        hybrid_score = bm25_weight * bm25_norm + (1 - bm25_weight) * sim
+        pub_date = parse_date(article['date'])
+        fresh = freshness_factor(pub_date, freshness_alpha, freshness_beta)
+        final_score = hybrid_score * fresh
+
+        scored.append({
+            'id': article['id'],
+            'score': final_score,
+            'embedding': article_embedding,
+            'article': article
+        })
+
+    selected = mmr_selection(scored, lambda_val=mmr_lambda, top_n=top_n)
+    top_articles = [item['article'] for item in selected]
+
+    for article in top_articles:
+        article['user_rating'] = user_ratings.get(article['id'], None)
+
+    return top_articles
+
 # ---------- Маршруты ----------
 @app.route('/')
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return render_template('landing.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -200,7 +307,7 @@ def register():
             return redirect(url_for('register'))
         user_id = db.create_user(username, email, password)
         if user_id:
-            # Сделать первого пользователя администратором (если нет других)
+            # Сделать первого пользователя администратором
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 if db.is_sqlite:
@@ -244,105 +351,19 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    user_vec_bytes = db.get_user_vector(current_user.id)
-    if user_vec_bytes is None:
-        interest_vector = np.load(INTEREST_VECTOR_PATH)
-    else:
-        interest_vector = np.frombuffer(user_vec_bytes, dtype=np.float32)
-
-    articles = db.get_unsent_articles()
-    article_ids = [a['id'] for a in articles]
-
-    # --- BM25: строим запрос из интересов пользователя (лайкнутые статьи) ---
-    query = ""
-    with db.get_connection() as conn:
-        cursor = conn.cursor()
-        if db.is_sqlite:
-            cursor.execute('''
-                SELECT a.title, a.text FROM articles a
-                JOIN ratings r ON a.id = r.article_id
-                WHERE r.user_id = ? AND r.rating = 1
-            ''', (current_user.id,))
-        else:
-            cursor.execute('''
-                SELECT a.title, a.text FROM articles a
-                JOIN ratings r ON a.id = r.article_id
-                WHERE r.user_id = %s AND r.rating = 1
-            ''', (current_user.id,))
-        liked_texts = cursor.fetchall()
-        if liked_texts:
-            query = " ".join([f"{row[0]} {row[1] or ''}" for row in liked_texts])
-
-    bm25_scores = None
-    if query:
-        bm25_scores = bm25_indexer.get_scores(query)
-
-    # Получаем текущие рейтинги пользователя для подсветки кнопок
-    user_ratings = {}
-    if article_ids:
-        with db.get_connection() as conn:
-            cursor = conn.cursor()
-            if db.is_sqlite:
-                placeholders = ','.join(['?'] * len(article_ids))
-                cursor.execute(f'''
-                    SELECT article_id, rating FROM ratings
-                    WHERE user_id = ? AND article_id IN ({placeholders})
-                ''', (current_user.id, *article_ids))
-            else:
-                placeholders = ','.join(['%s'] * len(article_ids))
-                cursor.execute(f'''
-                    SELECT article_id, rating FROM ratings
-                    WHERE user_id = %s AND article_id IN ({placeholders})
-                ''', (current_user.id, *article_ids))
-            for row in cursor.fetchall():
-                user_ratings[row[0]] = row[1]
-
-    # Ранжирование
-    scored = []
-    for idx, article in enumerate(articles):
-        emb_bytes = article.get('embedding')
-        if emb_bytes is None:
-            full_text = article['title'] + ' ' + (article['text'] or '')
-            emb = semantic.get_embedding(full_text)
-            article_embedding = emb
-            db.update_article_embedding(article['id'], emb.tobytes())
-        else:
-            article_embedding = np.frombuffer(emb_bytes, dtype=np.float32)
-
-        sim = np.dot(interest_vector, article_embedding) / (np.linalg.norm(interest_vector) * np.linalg.norm(article_embedding))
-
-        bm25 = 0.0
-        if bm25_scores is not None and idx < len(bm25_scores):
-            bm25 = bm25_scores[idx]
-
-        if bm25_scores is not None and len(bm25_scores) > 0:
-            max_bm25 = np.max(bm25_scores) if bm25_scores.size > 0 else 1.0
-            if max_bm25 > 0:
-                bm25_norm = bm25 / max_bm25
-            else:
-                bm25_norm = 0.0
-        else:
-            bm25_norm = 0.0
-
-        hybrid_score = 0.3 * bm25_norm + 0.7 * sim
-        pub_date = parse_date(article['date'])
-        fresh = freshness_factor(pub_date)
-        final_score = hybrid_score * fresh
-
-        scored.append({
-            'id': article['id'],
-            'score': final_score,
-            'embedding': article_embedding,
-            'article': article
-        })
-
-    selected = mmr_selection(scored, lambda_val=MMR_LAMBDA, top_n=TOP_N)
-    top_articles = [item['article'] for item in selected]
-
-    for article in top_articles:
-        article['user_rating'] = user_ratings.get(article['id'], None)
-
+    top_articles = get_ranked_articles(current_user.id)
     return render_template('dashboard.html', articles=top_articles)
+
+@app.route('/api/search', methods=['POST'])
+@login_required
+def search():
+    data = request.get_json()
+    query = data.get('query', '').strip()
+    if not query:
+        return jsonify({'error': 'Empty query'}), 400
+    articles = get_ranked_articles(current_user.id, query=query)
+    html = render_template('_article_list.html', articles=articles)
+    return jsonify({'html': html})
 
 @app.route('/article/<int:article_id>')
 @login_required
@@ -377,13 +398,62 @@ def collect():
     if token != os.getenv('COLLECT_TOKEN', ''):
         return 'Unauthorized', 401
     from collectors.rss_collector import RssCollector
-    # Загружаем активные фиды из БД
     feeds = db.get_all_feeds(active_only=True)
     RSS_FEEDS = [feed['url'] for feed in feeds]
     collector = RssCollector(RSS_FEEDS, db, semantic)
     collector.collect()
     bm25_indexer.refresh()
     return 'OK', 200
+
+# ---------- API для интерфейса ----------
+@app.route('/api/user_context')
+@login_required
+def user_context():
+    with db.get_connection() as conn:
+        cursor = conn.cursor()
+        if db.is_sqlite:
+            cursor.execute('SELECT COUNT(*) FROM ratings WHERE user_id = ? AND rating = 1', (current_user.id,))
+        else:
+            cursor.execute('SELECT COUNT(*) FROM ratings WHERE user_id = %s AND rating = 1', (current_user.id,))
+        likes_count = cursor.fetchone()[0]
+    if likes_count == 0:
+        return jsonify({
+            'show_tip': True,
+            'message': '👋 Welcome! Like articles you find interesting — we will learn your preferences and show more relevant papers.'
+        })
+    else:
+        return jsonify({'show_tip': False})
+
+@app.route('/api/command', methods=['POST'])
+@login_required
+def process_command():
+    data = request.get_json()
+    command = data.get('command', '').lower()
+    # Простой обработчик – можно расширить позже
+    if 'plant' in command and 'genomics' in command:
+        return jsonify({'message': 'Focusing on plant genomics. Refresh the page to see updated digest.'})
+    elif 'crispr' in command:
+        return jsonify({'message': 'Showing CRISPR-related papers. We will adjust your interest vector.'})
+    else:
+        return jsonify({'message': f'Command received: "{command}". We are working on implementing this feature.'})
+
+@app.route('/export/bibtex')
+@login_required
+def export_bibtex():
+    articles = db.get_unsent_articles()
+    bibtex_entries = []
+    for art in articles:
+        bibtex = f"""@article{{{art['id']},
+  title = {{{art['title']}}},
+  journal = {{{art['source']}}},
+  year = {{{art['date'][:4]}}},
+  url = {{{art['url']}}}
+}}"""
+        bibtex_entries.append(bibtex)
+    response = make_response('\n\n'.join(bibtex_entries))
+    response.headers['Content-Type'] = 'application/x-bibtex'
+    response.headers['Content-Disposition'] = 'attachment; filename=digest.bib'
+    return response
 
 # ---------- Административные маршруты ----------
 @app.route('/admin')
@@ -431,7 +501,6 @@ def admin_user_details(user_id):
     if not user_data:
         flash('User not found', 'danger')
         return redirect(url_for('admin_users'))
-
     with db.get_connection() as conn:
         cursor = conn.cursor()
         if db.is_sqlite:
@@ -494,6 +563,27 @@ def toggle_feed(feed_id):
     else:
         flash('Feed not found', 'danger')
     return redirect(url_for('admin_feeds'))
+
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_settings():
+    if request.method == 'POST':
+        db.set_setting('bm25_weight', request.form.get('bm25_weight', '0.3'))
+        db.set_setting('mmr_lambda', request.form.get('mmr_lambda', '0.5'))
+        db.set_setting('freshness_alpha', request.form.get('freshness_alpha', '0.2'))
+        db.set_setting('freshness_beta', request.form.get('freshness_beta', '30'))
+        db.set_setting('interest_threshold', request.form.get('interest_threshold', '0.6'))
+        flash('Settings saved', 'success')
+        return redirect(url_for('admin_settings'))
+    settings = {
+        'bm25_weight': float(db.get_setting('bm25_weight', '0.3')),
+        'mmr_lambda': float(db.get_setting('mmr_lambda', '0.5')),
+        'freshness_alpha': float(db.get_setting('freshness_alpha', '0.2')),
+        'freshness_beta': float(db.get_setting('freshness_beta', '30')),
+        'interest_threshold': float(db.get_setting('interest_threshold', '0.6')),
+    }
+    return render_template('admin/settings.html', settings=settings)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,305 @@
+/* static/css/landing.css */
+.landing-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* Общий стиль для блоков (1,2,3) */
+.hero,
+.features,
+.how-it-works {
+    margin-bottom: 4rem;
+    padding: 3rem 2rem;
+    background: #ffffff;
+    border-radius: 2rem;
+    border: 1px solid #eef2ff;
+    box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.02), 0 1px 0 rgba(0, 0, 0, 0.02);
+    transition: box-shadow 0.2s ease;
+}
+
+.hero:hover,
+.features:hover,
+.how-it-works:hover {
+    box-shadow: 0 12px 20px -12px rgba(0, 0, 0, 0.08);
+}
+
+/* Hero Section (блок 1) */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4rem;
+    min-height: auto;
+}
+
+.hero-content {
+    flex: 1;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 1rem;
+}
+
+.hero-description {
+    font-size: 1.125rem;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-primary {
+    display: inline-block;
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #1e40af;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    display: inline-block;
+    background-color: transparent;
+    color: #3b82f6;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    font-weight: 500;
+    border: 1px solid #3b82f6;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #3b82f6;
+    color: white;
+    text-decoration: none;
+}
+
+.hero-illustration {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-logo {
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Features Section (блок 2) */
+.features {
+    text-align: center;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 3rem;
+    color: #111827;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.feature-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    border: 1px solid #eef2ff;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px -6px rgba(0, 0, 0, 0.05);
+    border-color: #e2e8f0;
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.feature-card p {
+    color: #6b7280;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+/* How it works Section (блок 3) */
+.how-it-works {
+    text-align: center;
+}
+
+.steps {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.step {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid #eef2ff;
+    transition: all 0.2s;
+}
+
+.step:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px -6px rgba(0, 0, 0, 0.05);
+    border-color: #e2e8f0;
+}
+
+.step-number {
+    width: 48px;
+    height: 48px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 auto 1rem;
+}
+
+.step h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.step p {
+    color: #6b7280;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+/* Footer (блок 4) */
+.landing-footer {
+    margin-top: 2rem;
+    padding: 3rem 0 2rem;
+    border-top: 1px solid #eef2ff;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.footer-info h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.footer-info p {
+    color: #6b7280;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-links a {
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: #3b82f6;
+}
+
+.footer-copyright {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef2ff;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 2rem;
+    }
+    .hero-buttons {
+        justify-content: center;
+    }
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    .footer-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .steps {
+        flex-direction: column;
+        align-items: center;
+    }
+    .step {
+        max-width: 300px;
+    }
+    .hero,
+    .features,
+    .how-it-works {
+        padding: 2rem 1.5rem;
+    }
+}
