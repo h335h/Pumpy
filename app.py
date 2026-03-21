@@ -10,12 +10,22 @@ from semantic import SemanticFilter
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+os.makedirs('logs', exist_ok=True)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-prod')
 app.config['DATABASE_URL'] = os.getenv('DATABASE_URL', 'sqlite:///articles.db')
 
 # Инициализация БД (SQLite-версия)
 db = Database(app.config['DATABASE_URL'])
+
+# Инициализация семантического модуля (загружаем модель и вектор один раз)
+MODEL_NAME = os.getenv('MODEL_NAME', 'BAAI/bge-small-en-v1.5')
+INTEREST_VECTOR_PATH = os.getenv('INTEREST_VECTOR_PATH', 'interest_vector.npy')
+THRESHOLD = float(os.getenv('INTEREST_THRESHOLD', '0.1'))
+semantic = SemanticFilter(MODEL_NAME, INTEREST_VECTOR_PATH, THRESHOLD)
 
 # Генерация interest_vector.npy, если отсутствует
 if not os.path.exists(INTEREST_VECTOR_PATH):
@@ -36,11 +46,6 @@ if not os.path.exists(INTEREST_VECTOR_PATH):
     else:
         raise FileNotFoundError("positive_examples.txt not found, cannot generate interest vector")
 
-# Инициализация семантического модуля (загружаем модель и вектор один раз)
-MODEL_NAME = os.getenv('MODEL_NAME', 'BAAI/bge-small-en-v1.5')
-INTEREST_VECTOR_PATH = os.getenv('INTEREST_VECTOR_PATH', 'interest_vector.npy')
-THRESHOLD = float(os.getenv('INTEREST_THRESHOLD', '0.1'))
-semantic = SemanticFilter(MODEL_NAME, INTEREST_VECTOR_PATH, THRESHOLD)
 
 # Константы для ранжирования
 TOP_N = int(os.getenv('TOP_N', 10))
