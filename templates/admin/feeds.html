@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>RSS Feeds</h2>
+<form method="post" action="{{ url_for('add_feed') }}" class="mb-3">
+    <div class="row">
+        <div class="col">
+            <input type="text" name="url" class="form-control" placeholder="Feed URL" required>
+        </div>
+        <div class="col">
+            <input type="text" name="name" class="form-control" placeholder="Name (optional)">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Add Feed</button>
+        </div>
+    </div>
+</form>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>URL</th>
+            <th>Active</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for feed in feeds %}
+        <tr>
+            <td>{{ feed.id }}</td>
+            <td>{{ feed.name or '—' }}</td>
+            <td>{{ feed.url }}</td>
+            <td>{{ 'Yes' if feed.active else 'No' }}</td>
+            <td>
+                <a href="{{ url_for('toggle_feed', feed_id=feed.id) }}" class="btn btn-sm btn-warning">
+                    {% if feed.active %}Deactivate{% else %}Activate{% endif %}
+                </a>
+                <a href="{{ url_for('delete_feed', feed_id=feed.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this feed?')">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

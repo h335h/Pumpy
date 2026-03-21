@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>User: {{ user.username }}</h2>
+<p>Email: {{ user.email }}</p>
+<p>Admin: {{ 'Yes' if user.is_admin else 'No' }}</p>
+<h3>Ratings</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Article</th>
+            <th>Rating</th>
+            <th>Date</th>
+            <th>Link</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rating in ratings %}
+        <tr>
+            <td>{{ rating.title }}</td>
+            <td>{% if rating.rating == 1 %}👍 Like{% else %}👎 Dislike{% endif %}</td>
+            <td>{{ rating.created_at }}</td>
+            <td><a href="{{ rating.url }}" target="_blank">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('admin_users') }}" class="btn btn-secondary">Back to users</a>
+{% endblock %}

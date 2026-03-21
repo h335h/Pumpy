@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Users</h5>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-light">Manage Users</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">RSS Feeds</h5>
+                <a href="{{ url_for('admin_feeds') }}" class="btn btn-light">Manage Feeds</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Statistics</h5>
+                <p class="card-text">Coming soon</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

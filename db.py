@@ -57,12 +57,15 @@ class Database:
                 source TEXT,
                 date TIMESTAMP,
                 sent BOOLEAN DEFAULT 0,
-                embedding TEXT,
+                embedding BLOB,
                 similarity REAL
             )
         ''')
         if not self._column_exists(conn, 'articles', 'similarity'):
             cursor.execute('ALTER TABLE articles ADD COLUMN similarity REAL')
+        if not self._column_exists(conn, 'articles', 'embedding'):
+            cursor.execute('ALTER TABLE articles ADD COLUMN embedding BLOB')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,9 +74,13 @@ class Database:
                 password TEXT,
                 lab_id INTEGER,
                 vector_path TEXT,
+                is_admin BOOLEAN DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        if not self._column_exists(conn, 'users', 'is_admin'):
+            cursor.execute('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS ratings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,6 +106,23 @@ class Database:
                 invite_code TEXT
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_vectors (
+                user_id INTEGER PRIMARY KEY,
+                vector BLOB NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS rss_feeds (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT UNIQUE NOT NULL,
+                name TEXT,
+                active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         conn.commit()
 
     def _init_postgres(self, conn):
@@ -112,12 +136,15 @@ class Database:
                 source TEXT,
                 date TIMESTAMP,
                 sent BOOLEAN DEFAULT FALSE,
-                embedding TEXT,
+                embedding BYTEA,
                 similarity REAL
             )
         ''')
         if not self._column_exists(conn, 'articles', 'similarity'):
             cursor.execute('ALTER TABLE articles ADD COLUMN similarity REAL')
+        if not self._column_exists(conn, 'articles', 'embedding'):
+            cursor.execute('ALTER TABLE articles ADD COLUMN embedding BYTEA')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -126,9 +153,13 @@ class Database:
                 password TEXT,
                 lab_id INTEGER,
                 vector_path TEXT,
+                is_admin BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
+        if not self._column_exists(conn, 'users', 'is_admin'):
+            cursor.execute('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS ratings (
                 id SERIAL PRIMARY KEY,
@@ -154,22 +185,39 @@ class Database:
                 invite_code TEXT
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_vectors (
+                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                vector BYTEA NOT NULL,
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS rss_feeds (
+                id SERIAL PRIMARY KEY,
+                url TEXT UNIQUE NOT NULL,
+                name TEXT,
+                active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
         conn.commit()
 
-    # --- Методы (одинаковые для обеих БД, но с разным синтаксисом) ---
-    def save_article(self, url, title, text, source, date, similarity):
+    # --- Методы работы со статьями (без изменений) ---
+    def save_article(self, url, title, text, source, date, similarity, embedding=None):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if self.is_sqlite:
                 cursor.execute('''
-                    INSERT INTO articles (url, title, text, source, date, similarity)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (url, title, text, source, date, similarity))
+                    INSERT OR IGNORE INTO articles (url, title, text, source, date, similarity, embedding)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (url, title, text, source, date, similarity, embedding))
             else:
                 cursor.execute('''
-                    INSERT INTO articles (url, title, text, source, date, similarity)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (url, title, text, source, date, similarity))
+                    INSERT INTO articles (url, title, text, source, date, similarity, embedding)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (url) DO NOTHING
+                ''', (url, title, text, source, date, similarity, embedding))
             conn.commit()
 
     def update_article_similarity(self, article_id, similarity):
@@ -181,13 +229,22 @@ class Database:
                 cursor.execute('UPDATE articles SET similarity = %s WHERE id = %s', (similarity, article_id))
             conn.commit()
 
+    def update_article_embedding(self, article_id, embedding_bytes):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('UPDATE articles SET embedding = ? WHERE id = ?', (embedding_bytes, article_id))
+            else:
+                cursor.execute('UPDATE articles SET embedding = %s WHERE id = %s', (embedding_bytes, article_id))
+            conn.commit()
+
     def get_unsent_articles(self):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if self.is_sqlite:
-                cursor.execute('SELECT * FROM articles WHERE sent = 0')
+                cursor.execute('SELECT id, url, title, text, source, date, similarity, embedding FROM articles WHERE sent = 0')
             else:
-                cursor.execute('SELECT * FROM articles WHERE sent = FALSE')
+                cursor.execute('SELECT id, url, title, text, source, date, similarity, embedding FROM articles WHERE sent = FALSE')
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
 
@@ -214,6 +271,7 @@ class Database:
             row = cursor.fetchone()
             return dict(row) if row else None
 
+    # --- Методы работы с пользователями (добавлен is_admin) ---
     def create_user(self, username, email, password):
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -288,18 +346,85 @@ class Database:
                 ''', (user_id, text))
             conn.commit()
 
-    def get_top_articles_for_user(self, user_id, limit=10):
+    # --- Методы для user_vectors ---
+    def save_user_vector(self, user_id, vector_bytes):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if self.is_sqlite:
                 cursor.execute('''
-                    SELECT * FROM articles WHERE sent = 0
-                    ORDER BY date DESC LIMIT ?
-                ''', (limit,))
+                    INSERT INTO user_vectors (user_id, vector, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id) DO UPDATE SET vector = excluded.vector, updated_at = CURRENT_TIMESTAMP
+                ''', (user_id, vector_bytes))
             else:
                 cursor.execute('''
-                    SELECT * FROM articles WHERE sent = FALSE
-                    ORDER BY date DESC LIMIT %s
-                ''', (limit,))
+                    INSERT INTO user_vectors (user_id, vector, updated_at)
+                    VALUES (%s, %s, NOW())
+                    ON CONFLICT (user_id) DO UPDATE SET vector = EXCLUDED.vector, updated_at = NOW()
+                ''', (user_id, vector_bytes))
+            conn.commit()
+
+    def get_user_vector(self, user_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('SELECT vector FROM user_vectors WHERE user_id = ?', (user_id,))
+            else:
+                cursor.execute('SELECT vector FROM user_vectors WHERE user_id = %s', (user_id,))
+            row = cursor.fetchone()
+            if row:
+                return row[0]
+            return None
+
+    def delete_rating(self, user_id, article_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('DELETE FROM ratings WHERE user_id = ? AND article_id = ?', (user_id, article_id))
+            else:
+                cursor.execute('DELETE FROM ratings WHERE user_id = %s AND article_id = %s', (user_id, article_id))
+            conn.commit()
+
+    # --- Методы для RSS-источников ---
+    def get_all_feeds(self, active_only=True):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                if active_only:
+                    cursor.execute('SELECT * FROM rss_feeds WHERE active = 1 ORDER BY id')
+                else:
+                    cursor.execute('SELECT * FROM rss_feeds ORDER BY id')
+            else:
+                if active_only:
+                    cursor.execute('SELECT * FROM rss_feeds WHERE active = TRUE ORDER BY id')
+                else:
+                    cursor.execute('SELECT * FROM rss_feeds ORDER BY id')
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
+
+    def add_feed(self, url, name=None):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('INSERT INTO rss_feeds (url, name) VALUES (?, ?)', (url, name))
+            else:
+                cursor.execute('INSERT INTO rss_feeds (url, name) VALUES (%s, %s)', (url, name))
+            conn.commit()
+
+    def delete_feed(self, feed_id):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('DELETE FROM rss_feeds WHERE id = ?', (feed_id,))
+            else:
+                cursor.execute('DELETE FROM rss_feeds WHERE id = %s', (feed_id,))
+            conn.commit()
+
+    def toggle_feed_active(self, feed_id, active):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('UPDATE rss_feeds SET active = ? WHERE id = ?', (active, feed_id))
+            else:
+                cursor.execute('UPDATE rss_feeds SET active = %s WHERE id = %s', (active, feed_id))
+            conn.commit()

@@ -15,14 +15,12 @@ class SemanticFilter:
         self._interest_vector = None
 
     def _load_model(self) -> SentenceTransformer:
-        """Ленивая загрузка модели."""
         if self._model is None:
             logger.info(f"Loading model: {self.model_name}")
             self._model = SentenceTransformer(self.model_name)
         return self._model
 
     def _load_vector(self) -> np.ndarray:
-        """Ленивая загрузка вектора интересов."""
         if self._interest_vector is None:
             self._interest_vector = np.load(self.interest_vector_path)
         return self._interest_vector
@@ -32,11 +30,14 @@ class SemanticFilter:
         vec = self._load_vector()
         emb = model.encode([text[:512]])
         sim = cosine_similarity(emb, vec.reshape(1, -1))[0][0]
-        # Выводим значение сходства в консоль
-        print(f"DEBUG similarity: {sim:.4f}")
         return float(sim)
 
+    def get_embedding(self, text: str) -> np.ndarray:
+        """Возвращает эмбеддинг текста как numpy array (384d)."""
+        model = self._load_model()
+        emb = model.encode([text[:512]], convert_to_numpy=True)
+        return emb[0]
+
     def is_relevant(self, text: str, custom_threshold: Optional[float] = None) -> bool:
-        """Проверяет, релевантен ли текст."""
         threshold = custom_threshold if custom_threshold is not None else self.threshold
         return self.get_similarity(text) >= threshold

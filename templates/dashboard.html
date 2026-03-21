@@ -8,8 +8,9 @@
         <p class="text-muted">{{ article.source }} | {{ article.date }}</p>
         <p>{{ article.text[:200] }}...</p>
         <div>
-            <button class="btn btn-sm btn-success like-btn" data-rating="1">👍 Like</button>
-            <button class="btn btn-sm btn-danger dislike-btn" data-rating="0">👎 Dislike</button>
+            <button class="btn btn-sm btn-success like-btn {% if article.user_rating == 1 %}active{% endif %}" data-rating="1">👍 Like</button>
+            <button class="btn btn-sm btn-danger dislike-btn {% if article.user_rating == 0 %}active{% endif %}" data-rating="0">👎 Dislike</button>
+            <button class="btn btn-sm btn-info details-btn" data-id="{{ article.id }}" data-bs-toggle="modal" data-bs-target="#articleModal">📄 Details</button>
         </div>
     </div>
     {% else %}
@@ -17,23 +18,121 @@
     {% endfor %}
 </div>
 
+<!-- Модальное окно -->
+<div class="modal fade" id="articleModal" tabindex="-1" aria-labelledby="articleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="articleModalLabel">Article Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <p>Loading...</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="modalOriginalLink" target="_blank" class="btn btn-primary">Read Original</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.querySelectorAll('.like-btn, .dislike-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const articleDiv = this.closest('.list-group-item');
-            const articleId = articleDiv.dataset.id;
-            const rating = this.dataset.rating;
-            fetch(`/rate/${articleId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({rating: parseInt(rating)})
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'ok') {
-                    this.disabled = true;
-                    this.textContent = this.classList.contains('like-btn') ? 'Liked' : 'Disliked';
+    document.addEventListener('DOMContentLoaded', function() {
+        function setButtonState(articleId, rating) {
+            const likeBtn = document.querySelector(`.list-group-item[data-id="${articleId}"] .like-btn`);
+            const dislikeBtn = document.querySelector(`.list-group-item[data-id="${articleId}"] .dislike-btn`);
+            if (rating === 1) {
+                likeBtn.classList.add('active');
+                dislikeBtn.classList.remove('active');
+            } else if (rating === 0) {
+                dislikeBtn.classList.add('active');
+                likeBtn.classList.remove('active');
+            } else {
+                likeBtn.classList.remove('active');
+                dislikeBtn.classList.remove('active');
+            }
+        }
+
+        // Обработчики для лайков/дизлайков
+        document.querySelectorAll('.like-btn, .dislike-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const articleDiv = this.closest('.list-group-item');
+                const articleId = articleDiv.dataset.id;
+                const clickedRating = parseInt(this.dataset.rating);
+                const currentRating = this.classList.contains('active') ? clickedRating : null;
+                let newRating;
+                if (currentRating !== null) {
+                    newRating = null;
+                } else {
+                    newRating = clickedRating;
                 }
+                fetch(`/rate/${articleId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({rating: newRating})
+                }).then(res => res.json()).then(data => {
+                    if (data.status === 'ok') {
+                        setButtonState(articleId, newRating);
+                    }
+                });
             });
         });
+
+        // Загрузка данных для модального окна
+        document.querySelectorAll('.details-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const articleId = this.dataset.id;
+                const modalBody = document.getElementById('modalBody');
+                modalBody.innerHTML = '<p>Loading...</p>';
+                fetch(`/article/${articleId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) {
+                            modalBody.innerHTML = `<p class="text-danger">${escapeHtml(data.error)}</p>`;
+                        } else {
+                            modalBody.innerHTML = `
+                                <h6>${escapeHtml(data.title)}</h6>
+                                <p class="text-muted">${escapeHtml(data.source)} | ${escapeHtml(data.date)}</p>
+                                <hr>
+                                <p>${escapeHtml(data.text) || 'No full text available.'}</p>
+                            `;
+                            document.getElementById('modalOriginalLink').href = data.url;
+                        }
+                    })
+                    .catch(err => {
+                        modalBody.innerHTML = '<p class="text-danger">Failed to load article details.</p>';
+                    });
+            });
+        });
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
     });
 </script>
+
+<style>
+    .btn.active {
+        opacity: 0.6;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+    }
+    .like-btn.active {
+        background-color: #198754;
+        border-color: #146c43;
+    }
+    .dislike-btn.active {
+        background-color: #dc3545;
+        border-color: #b02a37;
+    }
+    .details-btn {
+        margin-left: 10px;
+    }
+</style>
 {% endblock %}
