@@ -17,6 +17,25 @@ app.config['DATABASE_URL'] = os.getenv('DATABASE_URL', 'sqlite:///articles.db')
 # Инициализация БД (SQLite-версия)
 db = Database(app.config['DATABASE_URL'])
 
+# Генерация interest_vector.npy, если отсутствует
+if not os.path.exists(INTEREST_VECTOR_PATH):
+    if os.path.exists('positive_examples.txt'):
+        logging.info("Generating interest vector from positive_examples.txt...")
+        from sentence_transformers import SentenceTransformer
+        import numpy as np
+        model = SentenceTransformer(MODEL_NAME)
+        with open('positive_examples.txt', 'r', encoding='utf-8') as f:
+            texts = [line.strip() for line in f if line.strip()]
+        if texts:
+            embeddings = model.encode(texts, convert_to_tensor=True)
+            interest_vector = embeddings.mean(axis=0).cpu().numpy()
+            np.save(INTEREST_VECTOR_PATH, interest_vector)
+            logging.info(f"Interest vector saved to {INTEREST_VECTOR_PATH}")
+        else:
+            raise FileNotFoundError("positive_examples.txt is empty or missing")
+    else:
+        raise FileNotFoundError("positive_examples.txt not found, cannot generate interest vector")
+
 # Инициализация семантического модуля (загружаем модель и вектор один раз)
 MODEL_NAME = os.getenv('MODEL_NAME', 'BAAI/bge-small-en-v1.5')
 INTEREST_VECTOR_PATH = os.getenv('INTEREST_VECTOR_PATH', 'interest_vector.npy')
