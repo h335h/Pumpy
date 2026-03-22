@@ -130,6 +130,16 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        # ---------- Новая таблица для обратной связи ----------
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                text TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
         conn.commit()
 
     def _init_postgres(self, conn):
@@ -215,9 +225,17 @@ class Database:
                 updated_at TIMESTAMP DEFAULT NOW()
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS feedback (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                text TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
         conn.commit()
 
-    # --- Методы работы со статьями ---
+    # --- Методы работы со статьями (без изменений) ---
     def save_article(self, url, title, text, source, date, similarity, embedding=None):
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -471,3 +489,33 @@ class Database:
                     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
                 ''', (key, value))
             conn.commit()
+
+    # --- Методы для обратной связи ---
+    def add_feedback(self, user_id, text):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)', (user_id, text))
+            else:
+                cursor.execute('INSERT INTO feedback (user_id, text) VALUES (%s, %s)', (user_id, text))
+            conn.commit()
+
+    def get_all_feedback(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if self.is_sqlite:
+                cursor.execute('''
+                    SELECT f.id, f.user_id, u.username, f.text, f.created_at
+                    FROM feedback f
+                    LEFT JOIN users u ON f.user_id = u.id
+                    ORDER BY f.created_at DESC
+                ''')
+            else:
+                cursor.execute('''
+                    SELECT f.id, f.user_id, u.username, f.text, f.created_at
+                    FROM feedback f
+                    LEFT JOIN users u ON f.user_id = u.id
+                    ORDER BY f.created_at DESC
+                ''')
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]

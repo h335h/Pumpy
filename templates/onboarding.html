@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Welcome to Pumpy!</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Let's create your personal scientific profile.</p>
+                <p>Please describe your research interests in a few sentences. Be specific — mention topics, keywords, or research areas that matter to you.</p>
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="interests" class="form-label">Your interests</label>
+                        <textarea name="interests" id="interests" class="form-control" rows="6" placeholder="Example: I study plant-pathogen interactions, especially bacterial diseases in crops. My research focuses on genomics of Xanthomonas and molecular mechanisms of resistance. I also follow advances in CRISPR-based editing for plant improvement." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create my digest</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from db import Database
 from semantic import SemanticFilter
 from bm25_indexer import BM25Indexer
+import faiss
 
 load_dotenv()
 
@@ -46,6 +47,17 @@ semantic = SemanticFilter(MODEL_NAME, INTEREST_VECTOR_PATH, THRESHOLD)
 
 # Инициализация BM25 индексатора
 bm25_indexer = BM25Indexer(db)
+
+# Загрузка FAISS индекса
+try:
+    index = faiss.read_index('articles.faiss')
+    with open('article_ids.txt', 'r') as f:
+        article_ids = [int(line.strip()) for line in f]
+    print(f"FAISS index loaded with {len(article_ids)} articles")
+except Exception as e:
+    index = None
+    article_ids = []
+    print(f"FAISS index not found, will fall back to full scan ({e})")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -191,8 +203,26 @@ def get_ranked_articles(user_id, query=None):
     else:
         interest_vector = np.frombuffer(user_vec_bytes, dtype=np.float32)
 
-    articles = db.get_unsent_articles()
-    article_ids = [a['id'] for a in articles]
+    # Выбор статей: через FAISS или полный перебор
+    if index is not None and len(article_ids) > 0:
+        # Используем FAISS для поиска топ-100 ближайших
+        query_vec = interest_vector.reshape(1, -1).astype('float32')
+        faiss.normalize_L2(query_vec)
+        _, indices = index.search(query_vec, k=100)  # берём 100 ближайших
+        candidate_ids = [article_ids[i] for i in indices[0] if i < len(article_ids)]
+        # Получаем статьи по ID
+        articles = []
+        for aid in candidate_ids:
+            art = db.get_article(aid)
+            if art and not art.get('sent', False):
+                articles.append(art)
+        # Если статей мало (например, индекс включает только отправленные), можно дополнить
+        if len(articles) < 10:
+            articles += db.get_unsent_articles()[:50]  # fallback
+    else:
+        articles = db.get_unsent_articles()
+
+    article_ids_list = [a['id'] for a in articles]
 
     # Если передан поисковый запрос, используем его вместо лайков
     if query:
@@ -225,21 +255,21 @@ def get_ranked_articles(user_id, query=None):
 
     # Получаем рейтинги пользователя для подсветки кнопок
     user_ratings = {}
-    if article_ids:
+    if article_ids_list:
         with db.get_connection() as conn:
             cursor = conn.cursor()
             if db.is_sqlite:
-                placeholders = ','.join(['?'] * len(article_ids))
+                placeholders = ','.join(['?'] * len(article_ids_list))
                 cursor.execute(f'''
                     SELECT article_id, rating FROM ratings
                     WHERE user_id = ? AND article_id IN ({placeholders})
-                ''', (user_id, *article_ids))
+                ''', (user_id, *article_ids_list))
             else:
-                placeholders = ','.join(['%s'] * len(article_ids))
+                placeholders = ','.join(['%s'] * len(article_ids_list))
                 cursor.execute(f'''
                     SELECT article_id, rating FROM ratings
                     WHERE user_id = %s AND article_id IN ({placeholders})
-                ''', (user_id, *article_ids))
+                ''', (user_id, *article_ids_list))
             for row in cursor.fetchall():
                 user_ratings[row[0]] = row[1]
 
@@ -349,8 +379,30 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    # Если у пользователя нет вектора, отправляем на онбординг
+    if db.get_user_vector(current_user.id) is None:
+        return redirect(url_for('onboarding'))
     top_articles = get_ranked_articles(current_user.id)
     return render_template('dashboard.html', articles=top_articles)
+
+@app.route('/onboarding', methods=['GET', 'POST'])
+@login_required
+def onboarding():
+    # Если у пользователя уже есть вектор, редирект на дашборд
+    if db.get_user_vector(current_user.id) is not None:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        interests = request.form.get('interests', '').strip()
+        if not interests:
+            flash('Please describe your interests.', 'warning')
+            return redirect(url_for('onboarding'))
+        embedding = semantic.get_embedding(interests)
+        db.save_user_vector(current_user.id, embedding.tobytes())
+        flash('Your profile has been created! Now you can enjoy personalized digest.', 'success')
+        return redirect(url_for('dashboard'))
+
+    return render_template('onboarding.html')
 
 @app.route('/api/search', methods=['POST'])
 @login_required
@@ -403,7 +455,7 @@ def collect():
     bm25_indexer.refresh()
     return 'OK', 200
 
-# ---------- API для интерфейса (упрощённые) ----------
+# ---------- API для интерфейса ----------
 @app.route('/api/user_context')
 @login_required
 def user_context():
@@ -422,8 +474,6 @@ def user_context():
     else:
         return jsonify({'show_tip': False})
 
-# Удалён маршрут /api/command (или можно оставить заглушку)
-# Оставляем его, но возвращаем сообщение "Coming soon" без ложных обещаний
 @app.route('/api/command', methods=['POST'])
 @login_required
 def process_command():
@@ -576,6 +626,24 @@ def admin_settings():
         'interest_threshold': float(db.get_setting('interest_threshold', '0.6')),
     }
     return render_template('admin/settings.html', settings=settings)
+
+@app.route('/feedback', methods=['POST'])
+@login_required
+def feedback():
+    text = request.form.get('feedback', '').strip()
+    if text:
+        db.add_feedback(current_user.id, text)
+        flash('Thank you for your feedback!', 'success')
+    else:
+        flash('Feedback cannot be empty.', 'warning')
+    return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/admin/feedback')
+@login_required
+@admin_required
+def admin_feedback():
+    feedbacks = db.get_all_feedback()
+    return render_template('admin/feedback.html', feedbacks=feedbacks)
 
 if __name__ == '__main__':
     app.run(debug=True)

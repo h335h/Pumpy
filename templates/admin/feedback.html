@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>User Feedback</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Feedback</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for fb in feedbacks %}
+        <tr>
+            <td>{{ fb.id }}</td>
+            <td>{{ fb.username or fb.user_id }}</td>
+            <td>{{ fb.text }}</td>
+            <td>{{ fb.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

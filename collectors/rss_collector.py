@@ -41,19 +41,20 @@ class RssCollector(Collector):
                     text = title + ' ' + full
                 else:
                     text = title + ' ' + summary
+                # Вычисляем similarity и эмбеддинг (но similarity больше не используем для фильтра)
                 sim = self.filter.get_similarity(text)
-                if sim >= self.filter.threshold:
-                    embedding = self.filter.get_embedding(text).tobytes()
-                    self.db.save_article(
-                        url=link,
-                        title=title,
-                        text=text[:1000],
-                        source=feed.feed.get('title', 'RSS'),
-                        date=published,
-                        similarity=sim,
-                        embedding=embedding
-                    )
-                    logger.info(f"Saved RSS: {link}")
+                embedding = self.filter.get_embedding(text).tobytes()
+                # Сохраняем ВСЕ статьи, без проверки порога
+                self.db.save_article(
+                    url=link,
+                    title=title,
+                    text=text[:1000],
+                    source=feed.feed.get('title', 'RSS'),
+                    date=published,
+                    similarity=sim,          # сохраняем, но не используем для фильтрации
+                    embedding=embedding
+                )
+                logger.info(f"Saved RSS: {link}")
         except Exception as e:
             logger.error(f"Error in RSS feed {feed_url}: {e}")
 

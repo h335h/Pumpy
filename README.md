@@ -1,20 +1,20 @@
-# Pumpy – семантический агрегатор научных новостей
+# Pumpy
 
-[![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**Semantic news aggregator for scientific literature**
 
-## Описание
-Бот собирает научные статьи из RSS-лент ведущих журналов, фильтрует их по семантической близости к вашему профилю интересов и отправляет дайджест в личные сообщения ВКонтакте.
+Pumpy collects scientific articles from RSS feeds, filters them by semantic relevance to your interests, and delivers a personalized digest. It combines **embeddings (BAAI/bge-small-en-v1.5)**, **BM25** full‑text search, **MMR** diversity reranking, and user feedback (likes/dislikes) to provide highly relevant and diverse recommendations.
 
-## Особенности
-- **Семантическая фильтрация** – используется современная NLP модель `BAAI/bge-small-en-v1.5` для оценки релевантности каждой новости.
-- **Учёт свежести** – более новые статьи получают небольшой бонус при ранжировании.
-- **Множество источников** – RSS журналов (Nature, ASM, APS, bioRxiv).
-- **Безопасность** – все токены и персональные данные хранятся в `.env`.
-- **Легковесность** – работает на MacBook Air M1 с 8 ГБ RAM.
+---
 
-## Как это работает
-1. **Сбор** (`collectors/rss_collector.py`) – получает RSS, сохраняет в SQLite.
-2. **Фильтрация** (`semantic.py`) – использует семантическую модель и вектор интересов.
-3. **Ранжирование** (`sender.py`) – вычисляет итоговый `score = similarity * freshness_factor`, берёт топ-10.
-4. **Отправка** – через VK API формирует дайджест и отправляет указанным получателям.
+## Features
+
+- Automated collection from multiple RSS feeds (bioRxiv, Nature, ASM, APS, etc.)
+- Semantic relevance filtering using state‑of‑the‑art sentence‑transformers
+- Personalised ranking based on user likes/dislikes (weighted vector averaging)
+- Hybrid search (BM25 + embeddings)
+- MMR (Maximal Marginal Relevance) for result diversification
+- Web interface with like/dislike, article details modal, admin dashboard
+- Dynamic RSS feed management (add/remove/activate feeds through admin panel)
+- Export digest as BibTeX
+- Zero‑input agentic UI (contextual tips, natural language commands)
+- SQLite (default) or PostgreSQL support
